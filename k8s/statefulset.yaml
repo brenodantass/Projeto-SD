@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: q1-app
+  namespace: q1
+spec:
+  serviceName: q1-app
+  replicas: 3
+  selector:
+    matchLabels:
+      app: q1-app
+  template:
+    metadata:
+      labels:
+        app: q1-app
+    spec:
+      containers:
+        - name: app
+          image: q1-total-order:latest
+          imagePullPolicy: Never
+          env:
+            - name: NUM_PROCESSES
+              value: "3"
+            - name: PROCESS_ID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: INITIAL_CLOCK
+              value: "5"
+            - name: DELAY_MESSAGE_ID
+              value: ""
+            - name: DELAY_MS
+              value: "0"
+            - name: PEERS
+              value: "http://q1-app-0.q1-app.q1.svc.cluster.local:8000/message, http://q1-app-1.q1-app.q1.svc.cluster.local:8000/message, http://q1-app-2.q1-app.q1.svc.cluster.local:8000/message"
+          ports:
+            - containerPort: 8000
+              name: http
+  volumeClaimTemplates: []
