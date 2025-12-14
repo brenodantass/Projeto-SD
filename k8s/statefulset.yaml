@@ -3,8 +3,10 @@ kind: StatefulSet
 metadata:
   name: q1-app
   namespace: q1
+  labels:
+    app: q1-app
 spec:
-  serviceName: q1-app
+  serviceName: q1-service
   replicas: 3
   selector:
     matchLabels:
@@ -15,24 +17,24 @@ spec:
         app: q1-app
     spec:
       containers:
-        - name: app
-          image: q1-total-order:latest
-          imagePullPolicy: Never
+        - name: q1-container
+          image: q1-image:latest
+          imagePullPolicy: IfNotPresent
           env:
-            - name: NUM_PROCESSES
+            - name: TOTAL_REPLICAS
               value: "3"
-            - name: PROCESS_ID
+            - name: POD_NAME
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.name
-            - name: INITIAL_CLOCK
-              value: "5"
-            - name: DELAY_MESSAGE_ID
+            - name: START_CLOCK
+              value: "7"
+            - name: DELAY_ID
               value: ""
             - name: DELAY_MS
               value: "0"
             - name: PEERS
-              value: "http://q1-app-0.q1-app.q1.svc.cluster.local:8000/message, http://q1-app-1.q1-app.q1.svc.cluster.local:8000/message, http://q1-app-2.q1-app.q1.svc.cluster.local:8000/message"
+              value: "http://q1-app-0.q1-service.q1.svc.cluster.local:8080/msg, http://q1-app-1.q1-service.q1.svc.cluster.local:8080/msg, http://q1-app-2.q1-service.q1.svc.cluster.local:8080/msg"
           ports:
             - containerPort: 8000
               name: http

@@ -19,11 +19,13 @@ class TotalOrderState:
         self.in_election = False       # Flag de eleição em andamento
         self.alive_peers = set()       # Peers que responderam "ok" (opcional para depuração)
 
+# Relógio lógico de Lamport
     def tick_send(self) -> int:
         """Incrementa relógio ao enviar mensagem"""
         self.clock += 1
         return self.clock
 
+# Relógio lógico de Lamport - recebe mensagem ou ACK
     def tick_receive(self, incoming_ts: int):
         """Atualiza relógio ao receber mensagem ou ACK"""
         self.clock = max(self.clock, incoming_ts) + 1

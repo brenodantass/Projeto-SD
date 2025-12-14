@@ -1,13 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: q1-app
+  name: q1-service
   namespace: q1
+  labels:
+    app: q1-service
 spec:
-  clusterIP: None
   selector:
     app: q1-app
   ports:
     - name: http
       port: 8000
       targetPort: 8000
+  clusterIP: None

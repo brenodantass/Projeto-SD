@@ -32,6 +32,7 @@ state = TotalOrderState(process_id=PROCESS_ID, num_processes=NUM_PROCESSES, init
 async def health():
     return {"status": "ok", "process_id": PROCESS_ID, "clock": state.clock}
 
+# multicast de mensagem para todos os processos 
 @app.post("/multicast")
 async def multicast(payload: dict = Body(...)):
     ts = state.tick_send()
@@ -52,6 +53,7 @@ async def multicast(payload: dict = Body(...)):
     logger.info(f"[MULTICAST] P{PROCESS_ID} enviou mid={message_id} ts={ts} payload={payload}")
     return {"status": "sent", "message_id": message_id, "timestamp": ts, "process_id": PROCESS_ID}
 
+# recebe mensagem multicast
 @app.post("/message")
 async def receive_message(msg: dict = Body(...)):
     if not isinstance(msg, dict):
@@ -86,6 +88,7 @@ async def receive_message(msg: dict = Body(...)):
     logger.info(f"[RECEIVE] P{PROCESS_ID} recebeu mid={message_id} ts={incoming_ts} de P{origin_id}")
     return {"status": "received", "clock": state.clock}
 
+# recebe ACK de mensagem, adiciona e processa se possível
 @app.post("/ack")
 async def receive_ack(ack: dict = Body(...)):
     incoming_ts = int(ack.get("ts", state.clock))
@@ -161,10 +164,12 @@ async def receive_token(data: dict = Body(...)):
 def peer_url(i: int) -> str:
     return f"http://coord-app-{i}.coord-app.q1.svc.cluster.local:8000"
 
+# Endpoint para obter o coordenador atual
 @app.get("/coordinator")
 async def coordinator():
     return {"leader_id": state.leader_id, "process_id": PROCESS_ID}
 
+# Iniciar eleição, enviar mensagens e tratar respostas
 @app.post("/election")
 async def start_election():
     if state.in_election:
@@ -236,6 +241,7 @@ async def announce_coordinator(winner_id: int):
             await asyncio.gather(*tasks, return_exceptions=True)
     logger.info(f"[COORDINATOR] P{winner_id} anunciado como líder por P{PROCESS_ID}")
 
+#responde mensagem de eleição e dispara eleição 
 @app.post("/election_msg")
 async def election_msg(body: dict = Body(...)):
     from_id = int(body["from_id"])
@@ -245,10 +251,12 @@ async def election_msg(body: dict = Body(...)):
     asyncio.create_task(start_election())
     return {"status": "ok"}
 
+#recebe anúncio de coordenador
 @app.post("/coordinator_msg")
 async def coordinator_msg(body: dict = Body(...)):
     leader_id = int(body["leader_id"])
     state.leader_id = leader_id
     state.in_election = False
     logger.info(f"[COORDINATOR] P{PROCESS_ID} registrou líder = P{leader_id} (anunciado por P{body['from_id']})")
+    print(f"[Processo {PROCESS_ID}] Coordenador atual: {state.leader_id}")
     return {"status": "coordinator_set", "leader_id": leader_id}
